@@ -1,20 +1,53 @@
 <!DOCTYPE html>
+<html lang="ja">
 <html>
 
 <head>
   <meta charset="utf-8">
   <title>OpenCV.js Stitcher_SCANS風</title>
   <script src="https://docs.opencv.org/4.10.0/opencv.js"></script>
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-  <input type="file" id="imgs" accept="image/*" multiple>
-  <label for="matchNum">保持マッチ数:</label>
-  <input type="number" id="matchNum" value="20" min="1" max="100">
-  <button onclick="stitch()">Stitch</button>
-  <br>
-  <canvas id="canvas"></canvas>
-  <script src="./matching.js"></script>
+  <div class="tabs">
+    <ul class="tab-list">
+      <li class="tab-item active" tabindex="0">Stitch</li>
+      <li class="tab-item" tabindex="0">Parameter</li>
+    </ul>
+    <div class="tab-content">
+      <div class="tab-panel active">
+        <div class="container">
+          <canvas id="stitched_image"></canvas>
+          <hr>
+          <button id="load">load images</button>
+          <input type="file" id="imgs" accept="image/*" multiple>
+          <button id="stitch" onclick="stitch()">stitch</button>
+          <button id="download" onclick="downloadCanvas()" disabled>download</button>
+        </div>
+      </div>
+      <div class="tab-panel">
+        <div id="parameter" class="tab-contents-item">
+          <label for="matchNum">保持マッチ数:</label>
+          <input type="number" id="matchNum" value="20" min="1" max="100" disabled>
+          <br>
+          <hr>
+          <label for="cropHRange">水平クロップ範囲:</label>
+          <span id="cropHValue">100%</span>
+          <br>
+          <input type="range" id="cropHRange" min="0" max="100" value="100">
+          <br>
+          <label for="cropVRange">垂直クロップ範囲:</label>
+          <span id="cropVValue">70%</span>
+          <br>
+          <input type="range" id="cropVRange" min="0" max="100" value="70">
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="./stitch.js"></script>
+  <script src="./download.js"></script>
+  <script src="./tab.js"></script>
 </body>
 
 </html>
