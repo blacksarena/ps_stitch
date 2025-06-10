@@ -92,8 +92,3 @@ label {
 span {
     font-size: 1.0em;
 }
-
-#cropHRange,
-#cropVRange {
-    width: 100%;
-}
