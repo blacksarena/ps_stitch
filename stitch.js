@@ -38,9 +38,9 @@ function stitch() {
     }
     let base = cripByPixels(imgMats[0], cripTopValue.value, cripBottomValue.value, cripLeftValue.value, cripRightValue.value).cripped;
     for (let i = 1; i < imgMats.length; i++) {
-        let stitch = cripByPixels(imgMats[i], cripTopValue.value, cripBottomValue.value, cripLeftValue.value, cripRightValue.value);
+        let tgt_img = cripByPixels(imgMats[i], cripTopValue.value, cripBottomValue.value, cripLeftValue.value, cripRightValue.value);
         // let result = stitchPairAffine(base, imgMats[i]);
-        let result = stitchPairAffineAkaze(base, stitch.cripped);
+        let result = stitchPairAffineAkaze(base, tgt_img.cripped);
         stitch.delete();
         base.delete();
         base = result;
