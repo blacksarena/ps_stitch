@@ -41,7 +41,6 @@ function stitch() {
         let tgt_img = cripByPixels(imgMats[i], cripTopValue.value, cripBottomValue.value, cripLeftValue.value, cripRightValue.value);
         // let result = stitchPairAffine(base, imgMats[i]);
         let result = stitchPairAffineAkaze(base, tgt_img.cripped);
-        stitch.delete();
         base.delete();
         base = result;
     }
