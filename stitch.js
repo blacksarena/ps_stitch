@@ -41,6 +41,7 @@ function stitch() {
         let stitch = cripByPixels(imgMats[i], cripTopValue.value, cripBottomValue.value, cripLeftValue.value, cripRightValue.value);
         // let result = stitchPairAffine(base, imgMats[i]);
         let result = stitchPairAffineAkaze(base, stitch.cripped);
+        stitch.delete();
         base.delete();
         base = result;
     }
@@ -59,6 +60,7 @@ function cripByPixels(mat, cropTop = 0, cropBottom = 0, cropLeft = 0, cropRight 
     let cropW = Math.max(0, w - cropLeft - cropRight);
     let cropH = Math.max(0, h - cropTop - cropBottom);
     if (cropW <= 0 || cropH <= 0) {
+        alert("クリップ範囲が無効です");
         // 切りすぎた場合は空画像を返す
         return { cropped: new cv.Mat(), offset: { x: 0, y: 0 } };
     }
