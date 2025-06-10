@@ -26,36 +26,45 @@ document.getElementById('imgs').onchange = function (e) {
     });
 };
 
-const cropHRange = document.getElementById('cropHRange');
-const cropHValue = document.getElementById('cropHValue');
-if (cropHRange && cropHValue) {
-    cropHRange.addEventListener('input', function () {
-        cropHValue.textContent = cropHRange.value + '%';
-    });
-}
-const cropVRange = document.getElementById('cropVRange');
-const cropVValue = document.getElementById('cropVValue');
-if (cropVRange && cropVValue) {
-    cropVRange.addEventListener('input', function () {
-        cropVValue.textContent = cropVRange.value + '%';
-    });
-}
+const cripTopValue = document.getElementById('cripTopValue');
+const cripBottomValue = document.getElementById('cripBottomValue');
+const cripRightValue = document.getElementById('cripRightValue');
+const cripLeftValue = document.getElementById('cripLeftValue');
 
 function stitch() {
     if (imgMats.length < 2) {
         alert("2枚以上の画像を選択してください");
         return;
     }
-    let base = imgMats[0].clone();
+    let base = cripByPixels(imgMats[0], cripTopValue.value, cripBottomValue.value, cripLeftValue.value, cripRightValue.value).cripped;
     for (let i = 1; i < imgMats.length; i++) {
+        let stitch = cripByPixels(imgMats[i], cripTopValue.value, cripBottomValue.value, cripLeftValue.value, cripRightValue.value);
         // let result = stitchPairAffine(base, imgMats[i]);
-        let result = stitchPairAffineAkaze(base, imgMats[i]);
+        let result = stitchPairAffineAkaze(base, stitch.cripped);
         base.delete();
         base = result;
     }
     cv.imshow('stitched_image', base);
     base.delete();
     document.getElementById('download').disabled = false;
+}
+
+// mat画像を上下左右のピクセル数でクリップする
+// w306*h680
+// cropTop, cropBottom, cropLeft, cropRight: それぞれ切り取るピクセル数
+function cripByPixels(mat, cropTop = 0, cropBottom = 0, cropLeft = 0, cropRight = 0) {
+    let w = mat.cols, h = mat.rows;
+    let x = Math.max(0, cropLeft);
+    let y = Math.max(0, cropTop);
+    let cropW = Math.max(0, w - cropLeft - cropRight);
+    let cropH = Math.max(0, h - cropTop - cropBottom);
+    if (cropW <= 0 || cropH <= 0) {
+        // 切りすぎた場合は空画像を返す
+        return { cropped: new cv.Mat(), offset: { x: 0, y: 0 } };
+    }
+    let rect = new cv.Rect(x, y, cropW, cropH);
+    let cripped = mat.roi(rect);
+    return { cripped, offset: { x, y } };
 }
 
 // 2枚の画像を平面前提でstitchする
@@ -223,30 +232,13 @@ function stitchPairAffine(img1Mat, img2Mat) {
 
     return result;
 }
+
 function stitchPairAffineAkaze(img1Mat, img2Mat) {
-    function cropCenter(mat, cropRatioW = 0.7, cropRatioH = 0.7) {
-        let w = mat.cols, h = mat.rows;
-        let cropW = Math.floor(w * cropRatioW);
-        let cropH = Math.floor(h * cropRatioH);
-        let x = Math.floor((w - cropW) / 2);
-        let y = Math.floor((h - cropH) / 2);
-        let rect = new cv.Rect(x, y, cropW, cropH);
-        let cropped = mat.roi(rect);
-        return { cropped, offset: { x, y } };
-    }
-
-    let crop1 = cropCenter(img1Mat, cropHRange.value / 100, cropVRange.value / 100);
-    let crop2 = cropCenter(img2Mat, cropHRange.value / 100, cropVRange.value / 100);
-    let img1Cropped = crop1.cropped;
-    let img2Cropped = crop2.cropped;
-    let offset1 = crop1.offset;
-    let offset2 = crop2.offset;
-
     // グレースケール変換
     let gray1 = new cv.Mat();
     let gray2 = new cv.Mat();
-    cv.cvtColor(img1Cropped, gray1, cv.COLOR_RGB2GRAY);
-    cv.cvtColor(img2Cropped, gray2, cv.COLOR_RGB2GRAY);
+    cv.cvtColor(img1Mat, gray1, cv.COLOR_RGB2GRAY);
+    cv.cvtColor(img2Mat, gray2, cv.COLOR_RGB2GRAY);
 
     // AKAZE特徴点抽出
     let akaze = new cv.AKAZE();
@@ -278,29 +270,39 @@ function stitchPairAffineAkaze(img1Mat, img2Mat) {
         return img1Mat.clone();
     }
 
-    // 2組のマッチ点
-    let m0 = matchesArr[0];
-    let m1 = matchesArr[1];
+    // 2組のマッチ点を使う。ただしスケールが0.8～1.2の範囲外なら次の組を探す
+    let m0, m1, p1_0, p2_0, p1_1, p2_1, d1, d2, scale;
+    let found = false;
+    for (let i = 0; i < matchesArr.length - 1; i++) {
+        m0 = matchesArr[i];
+        m1 = matchesArr[i + 1];
 
-    let p1_0 = kp1.get(m0.queryIdx).pt;
-    let p2_0 = kp2.get(m0.trainIdx).pt;
-    let p1_1 = kp1.get(m1.queryIdx).pt;
-    let p2_1 = kp2.get(m1.trainIdx).pt;
+        p1_0 = kp1.get(m0.queryIdx).pt;
+        p2_0 = kp2.get(m0.trainIdx).pt;
+        p1_1 = kp1.get(m1.queryIdx).pt;
+        p2_1 = kp2.get(m1.trainIdx).pt;
 
-    // 元画像の座標系に戻す
-    let p1_0_org = { x: p1_0.x + offset1.x, y: p1_0.y + offset1.y };
-    let p2_0_org = { x: p2_0.x + offset2.x, y: p2_0.y + offset2.y };
-    let p1_1_org = { x: p1_1.x + offset1.x, y: p1_1.y + offset1.y };
-    let p2_1_org = { x: p2_1.x + offset2.x, y: p2_1.y + offset2.y };
+        // スケール計算
+        d1 = Math.hypot(p1_1.x - p1_0.x, p1_1.y - p1_0.y);
+        d2 = Math.hypot(p2_1.x - p2_0.x, p2_1.y - p2_0.y);
+        scale = d1 > 0 && d2 > 0 ? d1 / d2 : 1.0;
 
-    // スケール計算
-    let d1 = Math.hypot(p1_1_org.x - p1_0_org.x, p1_1_org.y - p1_0_org.y);
-    let d2 = Math.hypot(p2_1_org.x - p2_0_org.x, p2_1_org.y - p2_0_org.y);
-    let scale = d1 > 0 && d2 > 0 ? d1 / d2 : 1.0;
+        if (scale >= 0.5 && scale <= 2.0) {
+            found = true;
+            break;
+        }
+    }
+    if (!found) {
+        alert("適切なスケールのマッチ点が見つかりません");
+        gray1.delete(); gray2.delete(); akaze.delete(); kp1.delete(); kp2.delete();
+        des1.delete(); des2.delete(); bf.delete(); matches.delete();
+        img1Mat.delete(); img2Mat.delete();
+        return img1Mat.clone();
+    }
 
     // 平行移動計算（スケール適用後）
-    let dx = p1_0_org.x - p2_0_org.x * scale;
-    let dy = p1_0_org.y - p2_0_org.y * scale;
+    let dx = p1_0.x - p2_0.x * scale;
+    let dy = p1_0.y - p2_0.y * scale;
 
     // アフィン行列（回転なし、スケール＋平行移動のみ）
     let affineMat = cv.matFromArray(2, 3, cv.CV_64F, [
@@ -327,30 +329,7 @@ function stitchPairAffineAkaze(img1Mat, img2Mat) {
     cv.threshold(mask, mask, 0, 255, cv.THRESH_BINARY);
     temp.copyTo(result, mask);
 
-    // アルファ値が0でない部分のバウンディングボックスを計算してトリミング
-    let rgba = new cv.Mat();
-    cv.cvtColor(result, rgba, cv.COLOR_RGBA2GRAY);
-    let maskNonZero = new cv.Mat();
-    cv.threshold(rgba, maskNonZero, 0, 255, cv.THRESH_BINARY);
-    let contours = new cv.MatVector();
-    let hierarchy = new cv.Mat();
-    cv.findContours(maskNonZero, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
-    if (contours.size() > 0) {
-        let rect = cv.boundingRect(contours.get(0));
-        for (let i = 1; i < contours.size(); i++) {
-            let r = cv.boundingRect(contours.get(i));
-            rect.x = Math.min(rect.x, r.x);
-            rect.y = Math.min(rect.y, r.y);
-            rect.width = Math.max(rect.x + rect.width, r.x + r.width) - rect.x;
-            rect.height = Math.max(rect.y + rect.height, r.y + r.height) - rect.y;
-        }
-        let cropped = result.roi(rect);
-        result.delete();
-        result = cropped.clone();
-        cropped.delete();
-    }
     // メモリ解放
-    rgba.delete(); maskNonZero.delete(); contours.delete(); hierarchy.delete();
     gray1.delete(); gray2.delete(); akaze.delete(); kp1.delete(); kp2.delete();
     des1.delete(); des2.delete(); bf.delete(); matches.delete();
     affineMat.delete(); temp.delete(); mask.delete();
