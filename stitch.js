@@ -330,7 +330,32 @@ function stitchPairAffineAkaze(img1Mat, img2Mat) {
     cv.threshold(mask, mask, 0, 255, cv.THRESH_BINARY);
     temp.copyTo(result, mask);
 
+    // アルファ値が0でない部分のバウンディングボックスを計算してトリミング
+    let rgba = new cv.Mat();
+    cv.cvtColor(result, rgba, cv.COLOR_RGBA2GRAY);
+    let maskNonZero = new cv.Mat();
+    cv.threshold(rgba, maskNonZero, 0, 255, cv.THRESH_BINARY);
+    let contours = new cv.MatVector();
+    let hierarchy = new cv.Mat();
+    cv.findContours(maskNonZero, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+    if (contours.size() > 0) {
+        let rect = cv.boundingRect(contours.get(0));
+        for (let i = 1; i < contours.size(); i++) {
+            let r = cv.boundingRect(contours.get(i));
+            rect.x = Math.min(rect.x, r.x);
+            rect.y = Math.min(rect.y, r.y);
+            rect.width = Math.max(rect.x + rect.width, r.x + r.width) - rect.x;
+            rect.height = Math.max(rect.y + rect.height, r.y + r.height) - rect.y;
+        }
+        let cropped = result.roi(rect);
+        result.delete();
+        result = cropped.clone();
+        cropped.delete();
+    }
+
+
     // メモリ解放
+    rgba.delete(); maskNonZero.delete(); contours.delete(); hierarchy.delete();
     gray1.delete(); gray2.delete(); akaze.delete(); kp1.delete(); kp2.delete();
     des1.delete(); des2.delete(); bf.delete(); matches.delete();
     affineMat.delete(); temp.delete(); mask.delete();
