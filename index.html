@@ -27,26 +27,15 @@
         </div>
       </div>
       <div class="tab-panel">
-        <div id="parameter" class="tab-contents-item">
-          <label for="matchNum">保持マッチ数:</label>
-          <input type="number" id="matchNum" value="20" min="1" max="100" disabled>
+        <div class="parameter">
+          <crip-slider id="cripTopValue" label="cripTopValue" value="370"></crip-slider>
           <br>
-          <hr>
-          <label for="cripTop">上クリップ量[pixel]</label>
+          <crip-slider id="cripBottomValue" label="cripBottomValue" value="230"></crip-slider>
           <br>
-          <input type="number" id="cripTopValue" value="370">
+          <crip-slider id="cripRightValue" label="cripRightValue" value="200"></crip-slider>
           <br>
-          <label for="cripBottom">下クリップ量[pixel]</label>
+          <crip-slider id="cripLeftValue" label="cripLeftValue" value="0"></crip-slider>
           <br>
-          <input type="number" id="cripBottomValue" value="230">
-          <br>
-          <label for="cripRight">右クリップ量[pixel]</label>
-          <br>
-          <input type="number" id="cripRightValue" value="200">
-          <br>
-          <label for="cripLeft">左クリップ量[pixel]</label>
-          <br>
-          <input type="number" id="cripLeftValue" value="0">
         </div>
       </div>
     </div>
@@ -54,6 +43,7 @@
   <script src="./stitch.js"></script>
   <script src="./download.js"></script>
   <script src="./tab.js"></script>
+  <script src="./crip_slider.js"></script>
 </body>
 
 </html>
