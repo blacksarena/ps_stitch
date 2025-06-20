@@ -18,8 +18,13 @@
     <div class="tab-content">
       <div class="tab-panel active">
         <div class="container">
-          <canvas id="stitched_image"></canvas>
-          <hr>
+          <ul class="scroll_content">
+          </ul>
+          <ul class="stitched_content">
+            <li>
+              <canvas id="stitched_image"></canvas>
+            </li>
+          </ul>
           <button id="load">load images</button>
           <input type="file" id="imgs" accept="image/*" multiple>
           <button id="stitch" onclick="stitch()">stitch</button>

@@ -1,16 +1,75 @@
 
 // sa https://qiita.com/ka10ryu1/items/bd05aed321a7a154d8a1
 let imgMats = [];
+const cripTopValue = document.getElementById('cripTopValue');
+const cripBottomValue = document.getElementById('cripBottomValue');
+const cripRightValue = document.getElementById('cripRightValue');
+const cripLeftValue = document.getElementById('cripLeftValue');
 
 document.getElementById("load").addEventListener("click", () => {
     document.getElementById("imgs").click();
 });
 
 document.getElementById('imgs').onchange = function (e) {
-    imgMats.forEach(mat => mat && mat.delete && mat.delete());
-    imgMats = [];
+    const scrollContent = document.querySelector('.scroll_content');
+    scrollContent.innerHTML = ""; // 既存の内容をクリア
+
     let files = Array.from(e.target.files);
     files.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+
+    // クリップ値取得関数
+    function getClipValues() {
+        return {
+            top: parseInt(cripTopValue.value) || 0,
+            bottom: parseInt(cripBottomValue.value) || 0,
+            left: parseInt(cripLeftValue.value) || 0,
+            right: parseInt(cripRightValue.value) || 0
+        };
+    }
+
+    // プレビュー画像を再描画する関数
+    function updatePreview() {
+        scrollContent.innerHTML = "";
+        files.forEach((file, idx) => {
+            let img = new Image();
+            img.onload = function () {
+                let canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                let ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+
+                // クリップ範囲に暗いマスクを描画
+                let { top, bottom, left, right } = getClipValues();
+                ctx.save();
+                ctx.globalAlpha = 0.5;
+                ctx.fillStyle = "#000";
+                if (top > 0) ctx.fillRect(0, 0, canvas.width, top);
+                if (bottom > 0) ctx.fillRect(0, canvas.height - bottom, canvas.width, bottom);
+                if (left > 0) ctx.fillRect(0, top, left, canvas.height - top - bottom);
+                if (right > 0) ctx.fillRect(canvas.width - right, top, right, canvas.height - top - bottom);
+                ctx.restore();
+
+                let previewImg = document.createElement('img');
+                previewImg.style.maxWidth = "100%";
+                previewImg.style.maxHeight = "100%";
+                previewImg.style.margin = "4px";
+                previewImg.src = canvas.toDataURL();
+                scrollContent.appendChild(previewImg);
+            };
+            img.src = URL.createObjectURL(file);
+        });
+    }
+
+    // クリップ値変更時にプレビューを更新
+    [cripTopValue, cripBottomValue, cripLeftValue, cripRightValue].forEach(input => {
+        input.oninput = updatePreview;
+    });
+
+    updatePreview();
+
+    imgMats.forEach(mat => mat && mat.delete && mat.delete());
+    imgMats = [];
     let loaded = 0;
     files.forEach((file, idx) => {
         let img = new Image();
@@ -25,11 +84,6 @@ document.getElementById('imgs').onchange = function (e) {
         img.src = URL.createObjectURL(file);
     });
 };
-
-const cripTopValue = document.getElementById('cripTopValue');
-const cripBottomValue = document.getElementById('cripBottomValue');
-const cripRightValue = document.getElementById('cripRightValue');
-const cripLeftValue = document.getElementById('cripLeftValue');
 
 function stitch() {
     if (imgMats.length < 2) {
