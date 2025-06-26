@@ -9,35 +9,27 @@ class CripSlider extends HTMLElement {
         const initialLabel = this.getAttribute('label') ?? "crip pixel";
         const initialValue = this.getAttribute('value') ?? 50;
         this.shadowRoot.innerHTML = `
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
             <style>
-                .slider-container {
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    width: 100%;
-                }
-                .crip_label {
-                    font-size: 0.8em;
-                    margin-right: 10px;
-                }
-                .dec {
-                    font-size: 0.5em;
-                }
-                .crip_slider {
-                    width: 100%;
-                    margin: 0 10px;
-                }
-                .inc {
-                    margin-left: auto;
-                    font-size: 0.5em;
-                }
+            .crip-slider-container {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+            .crip-slider-label {
+                font-size: 0.9em;
+                margin-right: 1rem;
+            }
+            .crip-slider-range {
+                flex: 1;
+                margin: 0 0.5rem;
+            }
             </style>
-            <label class="crip_label">${initialLabel}: <span id="valueDisplay">${initialValue}</span></label>
-            <br>
-            <div class="slider-container">
-                <button id="decrement" class="dec" type="button"><</button>
-                <input id="slider" class="crip_slider" type="range">
-                <button id="increment" class="inc" type="button">></button>
+            <label class="crip-slider-label form-label">${initialLabel}: <span id="valueDisplay" class="fw-bold">${initialValue}</span></label>
+            <div class="crip-slider-container mb-2">
+            <button id="decrement" class="btn btn-outline-secondary btn-sm" type="button">&lt;</button>
+            <input id="slider" class="form-range crip-slider-range" type="range">
+            <button id="increment" class="btn btn-outline-secondary btn-sm" type="button">&gt;</button>
             </div>
         `;
 
