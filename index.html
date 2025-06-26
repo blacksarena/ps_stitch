@@ -1,53 +1,56 @@
 <!DOCTYPE html>
 <html lang="ja">
-<html>
 
 <head>
   <meta charset="utf-8">
   <title>OpenCV.js Stitcher_SCANS風</title>
   <script src="https://docs.opencv.org/4.10.0/opencv.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 
-<body>
-  <div class="tabs">
-    <ul class="tab-list">
-      <li class="tab-item active" tabindex="0">Stitch</li>
-      <li class="tab-item" tabindex="0">Parameter</li>
-    </ul>
-    <div class="tab-content">
-      <div class="tab-panel active">
-        <div class="container">
-          <ul class="scroll_content">
-          </ul>
-          <ul class="stitched_content">
-            <li>
-              <canvas id="stitched_image"></canvas>
-            </li>
-          </ul>
-          <button id="load">load images</button>
-          <input type="file" id="imgs" accept="image/*" multiple>
-          <button id="stitch" onclick="stitch()">stitch</button>
-          <button id="download" onclick="downloadCanvas()" disabled>download</button>
-        </div>
-      </div>
-      <div class="tab-panel">
-        <div class="parameter">
-          <crip-slider id="cripTopValue" label="cripTopValue" value="370"></crip-slider>
-          <br>
-          <crip-slider id="cripBottomValue" label="cripBottomValue" value="230"></crip-slider>
-          <br>
-          <crip-slider id="cripRightValue" label="cripRightValue" value="200"></crip-slider>
-          <br>
-          <crip-slider id="cripLeftValue" label="cripLeftValue" value="0"></crip-slider>
-          <br>
-        </div>
+<body class="bg-light">
+  <div class="tab-pane fade show active" id="stitch" role="tabpanel" aria-labelledby="stitch-tab">
+    <div class="row">
+      <div class="col-12">
+        <ul class="list-group list-group-xl">
+          <ul class="list-group list-group-horizontal-xl overflow-auto" id="scroll_content"></ul>
+          <div class="progress" id="progress">
+            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"
+              aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+          </div>
+          <canvas id="stitched_image" class="img-fluid l overflow-auto border w-100"></canvas>
+          <hr class="my-4">
+          <input type="file" class="form-control mb-2" id="imgs" accept="image/*" multiple>
+          <button id="load" class="btn btn-secondary mb-2">load images</button>
+          <button id="stitch" class="btn btn-primary mb-2" onclick="stitch()">stitch</button>
+          <button id="download" class="btn btn-success mb-2" onclick="downloadCanvas()" disabled>download</button>
+          <hr class="my-4">
+          <div class="card card-body">
+            <div class="mb-3">
+              <label class="form-label">cripTopValue</label>
+              <crip-slider id="cripTopValue" label="cripTopValue" value="370"></crip-slider>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">cripBottomValue</label>
+              <crip-slider id="cripBottomValue" label="cripBottomValue" value="230"></crip-slider>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">cripRightValue</label>
+              <crip-slider id="cripRightValue" label="cripRightValue" value="200"></crip-slider>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">cripLeftValue</label>
+              <crip-slider id="cripLeftValue" label="cripLeftValue" value="0"></crip-slider>
+            </div>
+          </div>
+        </ul>
       </div>
     </div>
   </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script src="./stitch.js"></script>
   <script src="./download.js"></script>
-  <script src="./tab.js"></script>
   <script src="./crip_slider.js"></script>
 </body>
 

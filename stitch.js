@@ -6,67 +6,71 @@ const cripBottomValue = document.getElementById('cripBottomValue');
 const cripRightValue = document.getElementById('cripRightValue');
 const cripLeftValue = document.getElementById('cripLeftValue');
 
+// クリップ値変更時にプレビューを更新
+[cripTopValue, cripBottomValue, cripLeftValue, cripRightValue].forEach(input => {
+    input.oninput = () => updatePreview();
+});
 document.getElementById("load").addEventListener("click", () => {
     document.getElementById("imgs").click();
 });
 
-document.getElementById('imgs').onchange = function (e) {
-    const scrollContent = document.querySelector('.scroll_content');
-    scrollContent.innerHTML = ""; // 既存の内容をクリア
+// クリップ値取得関数
+function getClipValues() {
+    return {
+        top: parseInt(cripTopValue.value) || 0,
+        bottom: parseInt(cripBottomValue.value) || 0,
+        left: parseInt(cripLeftValue.value) || 0,
+        right: parseInt(cripRightValue.value) || 0
+    };
+}
 
+// プレビュー画像を再描画する関数
+function updatePreview() {
+    const scrollContent = document.getElementById('scroll_content');
+    while (scrollContent.firstChild) {
+        scrollContent.removeChild(scrollContent.firstChild);
+    }
+    imgMats.forEach((imgMat, idx) => {
+        // imgMatsがまだロードされていない場合はスキップ
+        if (!imgMat) return;
+
+        // imgMatからcanvasへ描画
+        let mat = imgMat;
+        let canvas = document.createElement('canvas');
+        canvas.width = mat.cols;
+        canvas.height = mat.rows;
+        cv.imshow(canvas, mat);
+
+        // クリップ範囲に暗いマスクを描画
+        let { top, bottom, left, right } = getClipValues();
+        let ctx = canvas.getContext('2d');
+        ctx.save();
+        ctx.globalAlpha = 0.5;
+        ctx.fillStyle = "#000";
+        if (top > 0) ctx.fillRect(0, 0, canvas.width, top);
+        if (bottom > 0) ctx.fillRect(0, canvas.height - bottom, canvas.width, bottom);
+        if (left > 0) ctx.fillRect(0, top, left, canvas.height - top - bottom);
+        if (right > 0) ctx.fillRect(canvas.width - right, top, right, canvas.height - top - bottom);
+        ctx.restore();
+
+        let previewImg = document.createElement('img');
+        previewImg.style.maxWidth = "100%";
+        previewImg.style.maxHeight = "100%";
+        previewImg.style.margin = "4px";
+        previewImg.src = canvas.toDataURL();
+        scrollContent.appendChild(previewImg);
+    });
+}
+
+function setProgress(percentage) {
+    const progressBar = document.querySelector('#progress .progress-bar');
+    progressBar.style.width = percentage + '%';
+    progressBar.setAttribute('aria-valuenow', percentage);
+}
+
+document.getElementById('imgs').onchange = function (e) {
     let files = Array.from(e.target.files);
     files.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
-
-    // クリップ値取得関数
-    function getClipValues() {
-        return {
-            top: parseInt(cripTopValue.value) || 0,
-            bottom: parseInt(cripBottomValue.value) || 0,
-            left: parseInt(cripLeftValue.value) || 0,
-            right: parseInt(cripRightValue.value) || 0
-        };
-    }
-
-    // プレビュー画像を再描画する関数
-    function updatePreview() {
-        scrollContent.innerHTML = "";
-        files.forEach((file, idx) => {
-            let img = new Image();
-            img.onload = function () {
-                let canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                let ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
-
-                // クリップ範囲に暗いマスクを描画
-                let { top, bottom, left, right } = getClipValues();
-                ctx.save();
-                ctx.globalAlpha = 0.5;
-                ctx.fillStyle = "#000";
-                if (top > 0) ctx.fillRect(0, 0, canvas.width, top);
-                if (bottom > 0) ctx.fillRect(0, canvas.height - bottom, canvas.width, bottom);
-                if (left > 0) ctx.fillRect(0, top, left, canvas.height - top - bottom);
-                if (right > 0) ctx.fillRect(canvas.width - right, top, right, canvas.height - top - bottom);
-                ctx.restore();
-
-                let previewImg = document.createElement('img');
-                previewImg.style.maxWidth = "100%";
-                previewImg.style.maxHeight = "100%";
-                previewImg.style.margin = "4px";
-                previewImg.src = canvas.toDataURL();
-                scrollContent.appendChild(previewImg);
-            };
-            img.src = URL.createObjectURL(file);
-        });
-    }
-
-    // クリップ値変更時にプレビューを更新
-    [cripTopValue, cripBottomValue, cripLeftValue, cripRightValue].forEach(input => {
-        input.oninput = updatePreview;
-    });
-
-    updatePreview();
 
     imgMats.forEach(mat => mat && mat.delete && mat.delete());
     imgMats = [];
@@ -79,8 +83,10 @@ document.getElementById('imgs').onchange = function (e) {
             canvas.getContext('2d').drawImage(img, 0, 0);
             imgMats[idx] = cv.imread(canvas);
             loaded++;
+            if (loaded === files.length) {
+                updatePreview();
+            }
         };
-        console.log(`Loading image ${idx + 1}/${files.length}: ${file.name}`);
         img.src = URL.createObjectURL(file);
     });
 };
@@ -96,14 +102,16 @@ function stitch() {
         let result = stitchPairAffineAkaze(base, tgt_img.cripped);
         base.delete();
         base = result;
+        // 進捗表示を更新
+        setProgress(((i + 1) / imgMats.length) * 100);
     }
     cv.imshow('stitched_image', base);
     base.delete();
     document.getElementById('download').disabled = false;
+    setProgress(0);
 }
 
 // mat画像を上下左右のピクセル数でクリップする
-// w306*h680
 // cropTop, cropBottom, cropLeft, cropRight: それぞれ切り取るピクセル数
 function cripByPixels(mat, cropTop = 0, cropBottom = 0, cropLeft = 0, cropRight = 0) {
     let w = mat.cols, h = mat.rows;
