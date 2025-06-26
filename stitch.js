@@ -1,6 +1,7 @@
 
 // sa https://qiita.com/ka10ryu1/items/bd05aed321a7a154d8a1
 let imgMats = [];
+let prevImgMats = [];
 const cripTopValue = document.getElementById('cripTopValue');
 const cripBottomValue = document.getElementById('cripBottomValue');
 const cripRightValue = document.getElementById('cripRightValue');
@@ -30,7 +31,7 @@ function updatePreview() {
     while (scrollContent.firstChild) {
         scrollContent.removeChild(scrollContent.firstChild);
     }
-    imgMats.forEach((imgMat, idx) => {
+    prevImgMats.forEach((imgMat, idx) => {
         // imgMatsがまだロードされていない場合はスキップ
         if (!imgMat) return;
 
@@ -43,6 +44,10 @@ function updatePreview() {
 
         // クリップ範囲に暗いマスクを描画
         let { top, bottom, left, right } = getClipValues();
+        top /= 3; // プレビュー用に1/3にする
+        bottom /= 3;
+        left /= 3;
+        right /= 3;
         let ctx = canvas.getContext('2d');
         ctx.save();
         ctx.globalAlpha = 0.5;
@@ -82,6 +87,12 @@ document.getElementById('imgs').onchange = function (e) {
             canvas.width = img.width; canvas.height = img.height;
             canvas.getContext('2d').drawImage(img, 0, 0);
             imgMats[idx] = cv.imread(canvas);
+            let prevCanvas = document.createElement('canvas');
+            prevCanvas.width = Math.round(img.width / 3);
+            prevCanvas.height = Math.round(img.height / 3);
+            let prevCtx = prevCanvas.getContext('2d');
+            prevCtx.drawImage(img, 0, 0, prevCanvas.width, prevCanvas.height);
+            prevImgMats[idx] = cv.imread(prevCanvas);
             loaded++;
             if (loaded === files.length) {
                 updatePreview();

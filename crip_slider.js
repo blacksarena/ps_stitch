@@ -6,7 +6,6 @@ class CripSlider extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
-        const initialLabel = this.getAttribute('label') ?? "crip pixel";
         const initialValue = this.getAttribute('value') ?? 50;
         this.shadowRoot.innerHTML = `
             <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
@@ -25,7 +24,7 @@ class CripSlider extends HTMLElement {
                 margin: 0 0.5rem;
             }
             </style>
-            <label class="crip-slider-label form-label">${initialLabel}: <span id="valueDisplay" class="fw-bold">${initialValue}</span></label>
+            <label class="crip-slider-label form-label">: <span id="valueDisplay" class="fw-bold">${initialValue}</span></label>
             <div class="crip-slider-container mb-2">
             <button id="decrement" class="btn btn-outline-secondary btn-sm" type="button">&lt;</button>
             <input id="slider" class="form-range crip-slider-range" type="range">
