@@ -6,7 +6,16 @@ class CripSlider extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
-        const initialValue = this.getAttribute('value') ?? 50;
+        const initialLabel = this.getAttribute('label') ?? 'Slider';
+        const initialValue = this.getAttribute('value') ?? 0;
+
+        let slider_value = getCookieValue(initialLabel);
+        if (slider_value !== null) {
+            slider_value = Math.max(Number(slider_value), Number(initialValue));
+        } else {
+            slider_value = initialValue;
+        }
+
         this.shadowRoot.innerHTML = `
             <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
             <style>
@@ -24,7 +33,7 @@ class CripSlider extends HTMLElement {
                 margin: 0 0.5rem;
             }
             </style>
-            <label class="crip-slider-label form-label">: <span id="valueDisplay" class="fw-bold">${initialValue}</span></label>
+            <label class="crip-slider-label form-label">${initialLabel}: <span id="valueDisplay" class="fw-bold">${slider_value}</span></label>
             <div class="crip-slider-container mb-2">
             <button id="decrement" class="btn btn-outline-secondary btn-sm" type="button">&lt;</button>
             <input id="slider" class="form-range crip-slider-range" type="range">
@@ -41,8 +50,9 @@ class CripSlider extends HTMLElement {
             if (val > min) {
                 this.slider.value = val - 1;
                 this.valueDisplay.textContent = this.slider.value;
-                this.setAttribute('value', this.slider.value);
                 this.dispatchEvent(new CustomEvent('change', { detail: this.value }));
+                setCookie(initialLabel, this.slider.value);
+                updatePreview();
             }
         });
 
@@ -52,8 +62,9 @@ class CripSlider extends HTMLElement {
             if (val < max) {
                 this.slider.value = val + 1;
                 this.valueDisplay.textContent = this.slider.value;
-                this.setAttribute('value', this.slider.value);
                 this.dispatchEvent(new CustomEvent('change', { detail: this.value }));
+                setCookie(initialLabel, this.slider.value);
+                updatePreview();
             }
         });
         this.slider = this.shadowRoot.querySelector('input[type="range"]');
@@ -61,21 +72,18 @@ class CripSlider extends HTMLElement {
         this.slider.addEventListener('input', () => {
             this.valueDisplay.textContent = this.slider.value;
             this.dispatchEvent(new CustomEvent('change', { detail: this.value }));
+            setCookie(initialLabel, this.slider.value);
+            updatePreview();
         });
-    }
-
-    connectedCallback() {
-        this._updateAttributes();
-    }
-
-    attributeChangedCallback(name, oldValue, newValue) {
-        this._updateAttributes();
-    }
-
-    _updateAttributes() {
         this.slider.min = this.getAttribute('min') ?? 0;
-        this.slider.max = this.getAttribute('max') ?? 1000;
-        this.slider.value = this.getAttribute('value') ?? 50;
+        const labelLower = initialLabel.toLowerCase();
+        if (labelLower.includes('top') || labelLower.includes('bottom')) {
+            this.slider.max = window.innerHeight;
+        } else if (labelLower.includes('right') || labelLower.includes('left')) {
+            this.slider.max = window.innerWidth;
+        }
+        this.slider.value = slider_value;
+        this.valueDisplay.textContent = this.slider.value;
     }
 
     get value() {
@@ -84,7 +92,6 @@ class CripSlider extends HTMLElement {
 
     set value(val) {
         this.slider.value = val;
-        this.setAttribute('value', val);
     }
 }
 

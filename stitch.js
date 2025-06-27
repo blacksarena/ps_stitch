@@ -1,15 +1,12 @@
 
 // sa https://qiita.com/ka10ryu1/items/bd05aed321a7a154d8a1
 let imgMats = [];
+let prevImgMats = [];
 const cripTopValue = document.getElementById('cripTopValue');
 const cripBottomValue = document.getElementById('cripBottomValue');
 const cripRightValue = document.getElementById('cripRightValue');
 const cripLeftValue = document.getElementById('cripLeftValue');
 
-// クリップ値変更時にプレビューを更新
-[cripTopValue, cripBottomValue, cripLeftValue, cripRightValue].forEach(input => {
-    input.oninput = () => updatePreview();
-});
 document.getElementById("load").addEventListener("click", () => {
     document.getElementById("imgs").click();
 });
@@ -30,12 +27,12 @@ function updatePreview() {
     while (scrollContent.firstChild) {
         scrollContent.removeChild(scrollContent.firstChild);
     }
-    imgMats.forEach((imgMat, idx) => {
+    prevImgMats.forEach((prevImgMat, idx) => {
         // imgMatsがまだロードされていない場合はスキップ
-        if (!imgMat) return;
+        if (!prevImgMat) return;
 
         // imgMatからcanvasへ描画
-        let mat = imgMat;
+        let mat = prevImgMat;
         let canvas = document.createElement('canvas');
         canvas.width = mat.cols;
         canvas.height = mat.rows;
@@ -43,6 +40,11 @@ function updatePreview() {
 
         // クリップ範囲に暗いマスクを描画
         let { top, bottom, left, right } = getClipValues();
+        // プレビュー用に高さを1/3に調整
+        top /= 3;
+        bottom /= 3;
+        left /= 3;
+        right /= 3;
         let ctx = canvas.getContext('2d');
         ctx.save();
         ctx.globalAlpha = 0.5;
@@ -74,6 +76,8 @@ document.getElementById('imgs').onchange = function (e) {
 
     imgMats.forEach(mat => mat && mat.delete && mat.delete());
     imgMats = [];
+    prevImgMats.forEach(mat => mat && mat.delete && mat.delete());
+    prevImgMats = [];
     let loaded = 0;
     files.forEach((file, idx) => {
         let img = new Image();
@@ -83,13 +87,11 @@ document.getElementById('imgs').onchange = function (e) {
             canvas.getContext('2d').drawImage(img, 0, 0);
             imgMats[idx] = cv.imread(canvas);
             let prevCanvas = document.createElement('canvas');
-            let displayHeight = document.documentElement.offsetHeight;
-            console.log("Display height:", displayHeight);
-            prevCanvas.height = Math.round(displayHeight / 3);
-            prevCanvas.width = Math.round(img.width * (prevCanvas.height / img.height));
-            let prevCtx = prevCanvas.getContext('2d');
-            prevCtx.drawImage(img, 0, 0, prevCanvas.width, prevCanvas.height);
-            imgMats[idx] = cv.imread(prevCanvas);
+            prevCanvas.width = Math.floor(img.width / 3);
+            prevCanvas.height = Math.floor(img.height / 3);
+            let ctx = prevCanvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, prevCanvas.width, prevCanvas.height);
+            prevImgMats[idx] = cv.imread(prevCanvas);
             loaded++;
             if (loaded === files.length) {
                 updatePreview();
@@ -111,7 +113,7 @@ function stitch() {
         base.delete();
         base = result;
         // 進捗表示を更新
-        setProgress(((i + 1) / imgMats.length) * 100);
+        setProgress(((i + 1) / imgMats.length) * 100.0);
     }
     cv.imshow('stitched_image', base);
     base.delete();
